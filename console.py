@@ -3,7 +3,7 @@
 import cmd
 import sys
 from models.base_model import BaseModel
-from models.__init__ import storage
+from models.engine.file_storage import storage
 from models.user import User
 from models.place import Place
 from models.state import State
@@ -113,18 +113,43 @@ class HBNBCommand(cmd.Cmd):
         """ Overrides the emptyline method of CMD """
         pass
 
-    def do_create(self, args):
-        """ Create an object of any class"""
-        if not args:
-            print("** class name missing **")
-            return
-        elif args not in HBNBCommand.classes:
-            print("** class doesn't exist **")
-            return
-        new_instance = HBNBCommand.classes[args]()
-        storage.save()
-        print(new_instance.id)
-        storage.save()
+   def do_create(self, args):
+        """ Create an object of any class with given parameters """
+    if not args:
+        print("** class name missing **")
+        return
+
+    args_list = args.split()  # Split the arguments into a list
+
+    class_name = args_list[0]  # Get the class name
+    if class_name not in HBNBCommand.classes:
+        print("** class doesn't exist **")
+        return
+
+    # Create a dictionary to store the parameter key-value pairs
+    params = {}
+    for arg in args_list[1:]:
+        if "=" in arg:
+            key, value = arg.split("=")  # Split the parameter into key and value
+            if value[0] == '"' and value[-1] == '"':  # Check if value is a string
+                value = value[1:-1].replace('_', ' ')
+            elif "." in value:  # Check if value is a float
+                try:
+                    value = float(value)
+                except ValueError:
+                    continue
+            else:  # Check if value is an integer
+                try:
+                    value = int(value)
+                except ValueError:
+                    continue
+            params[key] = value
+
+    # Create an instance of the class with the given parameters
+    new_instance = HBNBCommand.classes[class_name](**params)
+    storage.save()
+    print(new_instance.id)
+    storage.save()
 
     def help_create(self):
         """ Help information for the create method """
